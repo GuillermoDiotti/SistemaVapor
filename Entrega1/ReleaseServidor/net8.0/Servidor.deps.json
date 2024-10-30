@@ -1,0 +1,105 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Servidor/1.0.0": {
+        "dependencies": {
+          "Communication": "1.0.0"
+        },
+        "runtime": {
+          "Servidor.dll": {}
+        }
+      },
+      "System.Configuration.ConfigurationManager/9.0.0-rc.1.24431.7": {
+        "dependencies": {
+          "System.Diagnostics.EventLog": "9.0.0-rc.1.24431.7",
+          "System.Security.Cryptography.ProtectedData": "9.0.0-rc.1.24431.7"
+        },
+        "runtime": {
+          "lib/net8.0/System.Configuration.ConfigurationManager.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.43107"
+          }
+        }
+      },
+      "System.Diagnostics.EventLog/9.0.0-rc.1.24431.7": {
+        "runtime": {
+          "lib/net8.0/System.Diagnostics.EventLog.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.43107"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net8.0/System.Diagnostics.EventLog.Messages.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.43107"
+          }
+        }
+      },
+      "System.Security.Cryptography.ProtectedData/9.0.0-rc.1.24431.7": {
+        "runtime": {
+          "lib/net8.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.43107"
+          }
+        }
+      },
+      "Communication/1.0.0": {
+        "dependencies": {
+          "System.Configuration.ConfigurationManager": "9.0.0-rc.1.24431.7"
+        },
+        "runtime": {
+          "Communication.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Servidor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "System.Configuration.ConfigurationManager/9.0.0-rc.1.24431.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rrmFwEYq9QloK5ohBFdaFyFPtCJc7d8HxAAPuc8cCt4dOYQM/VFIoMGsTDsYhurCLVS8yzBYsENZtAFJ7Tap/w==",
+      "path": "system.configuration.configurationmanager/9.0.0-rc.1.24431.7",
+      "hashPath": "system.configuration.configurationmanager.9.0.0-rc.1.24431.7.nupkg.sha512"
+    },
+    "System.Diagnostics.EventLog/9.0.0-rc.1.24431.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ARI0u0Z1/eVTCeb6G4oS/xdTX0xvHPuIoT1IAHsRlOYzgzgmoXZxzH28AMD8etSCDXCBT+0icbcHMsNjOQlxDg==",
+      "path": "system.diagnostics.eventlog/9.0.0-rc.1.24431.7",
+      "hashPath": "system.diagnostics.eventlog.9.0.0-rc.1.24431.7.nupkg.sha512"
+    },
+    "System.Security.Cryptography.ProtectedData/9.0.0-rc.1.24431.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oPjLCPnuxKQ8lXyY4PPgbwuTu1qpeZGLbh4/c+o1ZcLXuLJlpKYOu9HmqvWD9VpReAFOp72a1GYRSsMmJKZ9aQ==",
+      "path": "system.security.cryptography.protecteddata/9.0.0-rc.1.24431.7",
+      "hashPath": "system.security.cryptography.protecteddata.9.0.0-rc.1.24431.7.nupkg.sha512"
+    },
+    "Communication/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
