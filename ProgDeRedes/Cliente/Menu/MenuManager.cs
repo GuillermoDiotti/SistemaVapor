@@ -4,7 +4,7 @@ namespace Cliente.Menu;
 
 static class MenuManager
 {
-    public static void ShowMenu(NetworkDataHelper networkDataHelper, ref bool logged, ref bool exit)
+    public static async Task ShowMenu(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- MENU DE ACCIONES ---");
         Console.WriteLine("1- Publicar un juego");
@@ -23,32 +23,32 @@ static class MenuManager
         switch (message)
         {
             case "1":
-                GameManager.CreateGame(networkDataHelper, ref exit);
+                await GameManager.CreateGame(networkDataHelper);
                 break;
             case "2":
-                GameManager.AcquireGame(networkDataHelper, ref exit);
+                await GameManager.AcquireGame(networkDataHelper);
                 break;
             case "3":
-                GameManager.ModifyGame(networkDataHelper, ref exit);
+                await GameManager.ModifyGame(networkDataHelper);
                 break;
             case "4":
-                GameManager.DeleteGame(networkDataHelper, ref exit);
+                await GameManager.DeleteGame(networkDataHelper);
                 break;
             case "5":
-                GameManager.SearchGames(networkDataHelper, ref exit);
+                await GameManager.SearchGames(networkDataHelper);
                 break;
             case "6":
-                GameManager.SpecificGameSearch(networkDataHelper, ref exit);
+                await GameManager.SpecificGameSearch(networkDataHelper);
                 break;
             case "7":
-                GameManager.AddGameReview(networkDataHelper, ref exit);
+                await GameManager.AddGameReview(networkDataHelper);
                 break;
             case "8":
-                logged = false;
+                Program._logged = false;
                 break;
             default:
                 Console.WriteLine("\nOpcion no valida, ingrese una opcion entre 1 y 8");
-                ShowMenu(networkDataHelper, ref logged, ref exit);
+                await ShowMenu(networkDataHelper);
                 break;
         }
     }

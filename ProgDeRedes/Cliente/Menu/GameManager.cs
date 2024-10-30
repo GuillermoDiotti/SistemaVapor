@@ -5,7 +5,7 @@ namespace Cliente.Menu;
 
 static class GameManager
 {
-    public static void CreateGame(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task CreateGame (NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Publicar Juego ---");
 
@@ -25,32 +25,32 @@ static class GameManager
         string platform = Utilities.ShowGamePlatforms().ToString();
         
         Console.Write("Unidades del juego: ");
-        int units = Utilities.CheckIntegerValue(1, int.MaxValue);
+        int units = Utilities.CheckIntegerValue(0, int.MaxValue);
 
-        string message = $"{title}#{genre}#{date}#{publisher}#{platform}#{units}";;
+        string message = $"{title}#{genre}#{date}#{publisher}#{platform}#{units}";
         
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.CreateGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, message);
+            await Program.SendData(networkDataHelper, message);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
-            if(response.Split("#")[0] == "1") CreateGameCover(networkDataHelper, ref exit, title);
+            if(response.Split("#")[0] == "1") await CreateGameCover(networkDataHelper, title);
         }
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
         
     }
     
-    static void CreateGameCover(NetworkDataHelper networkDataHelper, ref bool exit, string title)
+    static async Task CreateGameCover(NetworkDataHelper networkDataHelper, string title)
     {
         Console.WriteLine("¿Desea subir una portada para dicho juego? (S/N)");
         string res = Utilities.ReadNonEmptyInput();
@@ -62,16 +62,16 @@ static class GameManager
 
             try
             {
-                var fileCommonHandler = new FileCommsHandler(Program.socketClient);
+                var fileCommonHandler = new FileCommsHandler(Program.tcpClient);
 
-                if (fileCommonHandler._fileHandler.FileExists(path))
+                if (await fileCommonHandler._fileHandler.FileExists(path))
                 {
                     byte[] actionCode = BitConverter.GetBytes((int)Actions.CreateGameCover);
-                    networkDataHelper.Send(actionCode);
+                    await networkDataHelper.SendAsync(actionCode);
 
-                    fileCommonHandler.SendFile(path);
+                    await fileCommonHandler.SendFile(path);
 
-                    string response = Program.ReceiveResponse(networkDataHelper);
+                    string response = await Program.ReceiveResponse(networkDataHelper);
                     Console.WriteLine($"Servidor:");
                     Console.WriteLine();
                     Program.ShowResponse(response);
@@ -79,13 +79,13 @@ static class GameManager
                 else
                 {
                     Program.ShowResponse("0#Imagen no encontrada.");
-                    CreateGameCover(networkDataHelper, ref exit, title);
+                    await CreateGameCover(networkDataHelper, title);
                 }
             }
             catch (SocketException e)
             {
                 Console.WriteLine("La conexión ha sido interrumpida.");
-                exit = true;
+                Program._exit = true;
             }
             catch (Exception e)
             {
@@ -94,11 +94,11 @@ static class GameManager
         }
     }
     
-    public static void AcquireGame(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task AcquireGame(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Adquirir Juego ---");
 
-        ListGamesByName(networkDataHelper, ref exit);
+        await ListGamesByName(networkDataHelper);
         
         Console.Write("Nombre del juego a adquirir: ");
         string name = Utilities.ReadNonEmptyInput();
@@ -106,11 +106,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.AcquireGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, name);
+            await Program.SendData(networkDataHelper, name);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
@@ -118,11 +118,11 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void ModifyGame(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task ModifyGame(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Modificar Juego ---");
 
@@ -152,25 +152,25 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ModifyGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, message);
+            await Program.SendData(networkDataHelper, message);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
             
-            if(response.Split("#")[0] == "1") ModifyGameCover(networkDataHelper, ref exit, title);
+            if(response.Split("#")[0] == "1") await ModifyGameCover(networkDataHelper, title);
         }
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    static void ModifyGameCover(NetworkDataHelper networkDataHelper, ref bool exit, string title)
+    static async Task ModifyGameCover(NetworkDataHelper networkDataHelper, string title)
     {
         Console.WriteLine("¿Desea modificar la portada para dicho juego? (S/N)");
         string res = Utilities.ReadNonEmptyInput();
@@ -182,16 +182,16 @@ static class GameManager
 
             try
             {
-                var fileCommonHandler = new FileCommsHandler(Program.socketClient);
+                var fileCommonHandler = new FileCommsHandler(Program.tcpClient);
 
-                if (fileCommonHandler._fileHandler.FileExists(path))
+                if (await fileCommonHandler._fileHandler.FileExists(path))
                 {
                     byte[] actionCode = BitConverter.GetBytes((int)Actions.ModifyCover);
-                    networkDataHelper.Send(actionCode);
+                    await networkDataHelper.SendAsync(actionCode);
 
-                    fileCommonHandler.SendFile(path);
+                    await fileCommonHandler.SendFile(path);
 
-                    string response = Program.ReceiveResponse(networkDataHelper);
+                    string response = await Program.ReceiveResponse(networkDataHelper);
                     Console.WriteLine($"Servidor:");
                     Console.WriteLine();
                     Program.ShowResponse(response);
@@ -199,13 +199,13 @@ static class GameManager
                 else
                 {
                     Program.ShowResponse("0#Imagen no encontrada.");
-                    ModifyGameCover(networkDataHelper, ref exit, title);
+                    await ModifyGameCover(networkDataHelper, title);
                 }
             }
             catch (SocketException e)
             {
                 Console.WriteLine("La conexión ha sido interrumpida.");
-                exit = true;
+                Program._exit = true;
             }
             catch (Exception e)
             {
@@ -214,11 +214,11 @@ static class GameManager
         }
     }
     
-    public static void DeleteGame(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task DeleteGame(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Eliminar Juego ---");
 
-        ListGamesByName(networkDataHelper, ref exit);
+        await ListGamesByName(networkDataHelper);
         
         Console.Write("Nombre del juego a eliminar: ");
         string name = Utilities.ReadNonEmptyInput();
@@ -226,11 +226,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.DeleteGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, name);
+            await Program.SendData(networkDataHelper, name);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
@@ -238,29 +238,29 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void SearchGames(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task SearchGames(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Listar Juegos ---");
         
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ListAllGames);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Console.WriteLine(response);
             
         }
-        catch (SocketException)
+        catch
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
         
         Console.WriteLine();
@@ -273,25 +273,25 @@ static class GameManager
         switch (choice)
         {
             case "1":
-                FilterByGenre(networkDataHelper, ref exit);
+                await FilterByGenre(networkDataHelper);
                 break;
             case "2":
-                FilterByPlatform(networkDataHelper, ref exit);
+                await FilterByPlatform(networkDataHelper);
                 break;
             case "3":
                 break;
             default:
                 Console.WriteLine("Opción no válida");
-                SearchGames(networkDataHelper, ref exit);
+                await SearchGames(networkDataHelper);
                 break;
         }
     }
     
-    public static void SpecificGameSearch(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task SpecificGameSearch(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Listar Información de un juego ---");
 
-        ListGamesByName(networkDataHelper, ref exit);
+        await ListGamesByName(networkDataHelper);
         
         Console.Write("Nombre del juego a buscar: ");
         string title = Utilities.ReadNonEmptyInput();
@@ -299,11 +299,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ShowGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, title);
+            await Program.SendData(networkDataHelper, title);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             if (response.Split("#")[0] == "0")
@@ -323,16 +323,16 @@ static class GameManager
                 switch (choice)
                 {
                     case "1":
-                        DownloadCover(networkDataHelper, ref exit, title);
+                        await DownloadCover(networkDataHelper, title);
                         break;
                     case "2":
-                        ViewReviews(networkDataHelper, ref exit, title);
+                        await ViewReviews(networkDataHelper, title);
                         break;
                     case "3":
                         break;
                     default:
                         Console.WriteLine("Opción no válida");
-                        SearchGames(networkDataHelper, ref exit);
+                        await SearchGames(networkDataHelper);
                         break;
                 }
             }
@@ -341,11 +341,11 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
 
-    public static void DownloadCover(NetworkDataHelper networkDataHelper, ref bool exit,string title)
+    public static async Task DownloadCover(NetworkDataHelper networkDataHelper, string title)
     {
         try
         {
@@ -353,21 +353,21 @@ static class GameManager
             
             
             byte[] actionCodeAsk = BitConverter.GetBytes((int)Actions.AskForCover);
-            networkDataHelper.Send(actionCodeAsk);
+            await networkDataHelper.SendAsync(actionCodeAsk);
             
-            Program.SendData(networkDataHelper, title);
+            await Program.SendData(networkDataHelper, title);
             
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
 
             if (response == "True")
             {
                 byte[] actionCode = BitConverter.GetBytes((int)Actions.DownloadCover);
-                networkDataHelper.Send(actionCode);
+                await networkDataHelper.SendAsync(actionCode);
                 
-                Program.SendData(networkDataHelper, title);
+                await Program.SendData(networkDataHelper, title);
                 
-                var fileCommonHandler = new FileCommsHandler(Program.socketClient);
-                fileCommonHandler.ReceiveFile();
+                var fileCommonHandler = new FileCommsHandler(Program.tcpClient);
+                await fileCommonHandler.ReceiveFile();
                 Program.ShowResponse("1#Imagen descargada");
             }
             else
@@ -387,22 +387,22 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void ViewReviews(NetworkDataHelper networkDataHelper, ref bool exit, string name)
+    public static async Task ViewReviews(NetworkDataHelper networkDataHelper, string name)
     {
         try
         {
             Console.WriteLine("\n--- Mostrando reseñas ---");
             byte[] actionCode = BitConverter.GetBytes((int)Actions.GetAllReviews);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
             
-            Program.SendData(networkDataHelper, name);
+            await Program.SendData(networkDataHelper, name);
             
             
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             if (response.Split("#")[0] == "0")
@@ -417,15 +417,15 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void AddGameReview(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task AddGameReview(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Calificar Juego ---");
 
-        ListGamesByName(networkDataHelper, ref exit);
+        await ListGamesByName(networkDataHelper);
         
         Console.Write("Nombre del juego a calificar: ");
         string name = Utilities.ReadNonEmptyInput();
@@ -441,11 +441,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.QualifyGame);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, message);
+            await Program.SendData(networkDataHelper, message);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
@@ -453,11 +453,11 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void FilterByGenre(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task FilterByGenre(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Listar Juegos por género ---");
 
@@ -466,11 +466,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ListByGenre);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
             
-            Program.SendData(networkDataHelper, genre.ToString());
+            await Program.SendData(networkDataHelper, genre.ToString());
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Console.WriteLine(response);
@@ -478,11 +478,11 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void FilterByPlatform(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task FilterByPlatform(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Listar Juegos por plataforma ---");
         
@@ -491,11 +491,11 @@ static class GameManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ListByPlatform);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, platform.ToString());
+            await Program.SendData(networkDataHelper, platform.ToString());
             
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Console.WriteLine(response);
@@ -503,28 +503,39 @@ static class GameManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
     
-    public static void ListGamesByName(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task ListGamesByName(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- Listar Juegos ---");
         
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.ListByName);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
-            Console.WriteLine(response);
+            
+            if (response == "Actualmente no hay juegos publicados.\r\n")
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{response}");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine($"{response}");
+            }
+
         }
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
     }
 }

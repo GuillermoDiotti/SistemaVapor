@@ -10,14 +10,14 @@ namespace Servidor.Logics.GameLogic;
 
 static class GameLogic
 {
-    public static Game HandleGameCreation(NetworkDataHelper networkDataHelper, User currentUser)
+    public static async Task<Game> HandleGameCreation(NetworkDataHelper networkDataHelper, User currentUser)
     {
         try
         {
-            var lengthBytes = networkDataHelper.Receive(4);
+            var lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
             string[] parts = message.Split('#');
 
@@ -40,36 +40,36 @@ static class GameLogic
             };
                     
             GameCollection.Instance.AddGame(newGame);
-            Program.SendResponse(networkDataHelper, "1#Registro exitoso.");
+            await Program.SendResponse(networkDataHelper, "1#Registro exitoso.");
             Console.WriteLine($"Juego {title}" + $" creado por: {currentUser.Name}");
 
             return newGame;
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
             return null;
         }
     }
     
-    public static void HandleGameCoverCreation(NetworkDataHelper networkDataHelper, ref Game currentGame, User currentUser, ref Socket socketClient)
+    public static async Task HandleGameCoverCreation(NetworkDataHelper networkDataHelper, Game currentGame, User currentUser, TcpClient tcpClient)
     {
         try
         {
-            var fileCommonHandler = new FileCommsHandler(socketClient);
-            string imageName = fileCommonHandler.ReceiveFile();
+            var fileCommonHandler = new FileCommsHandler(tcpClient);
+            string imageName = await fileCommonHandler.ReceiveFile();
             GameCollection.Instance.AssignCover(currentGame.Title, currentUser, imageName);
-            Program.SendResponse(networkDataHelper, "1#Caratula asignada exitosamente");
+            await Program.SendResponse(networkDataHelper, "1#Caratula asignada exitosamente");
             Console.WriteLine(currentGame.CoverImg);
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
         
     }
     
-    public static void HandleListGamesByName(NetworkDataHelper networkDataHelper)
+    public static async Task HandleListGamesByName(NetworkDataHelper networkDataHelper)
     {
         StringBuilder sb = new StringBuilder();
         List<Game> games = GameCollection.Instance.Games;
@@ -85,37 +85,37 @@ static class GameLogic
         {
             sb.AppendLine("Actualmente no hay juegos publicados.");
         }
-        Program.SendResponse(networkDataHelper, sb.ToString());
+        await Program.SendResponse(networkDataHelper, sb.ToString());
     }
     
-    public static void HandleAcquireGame(NetworkDataHelper networkDataHelper, ref User currentUser)
+    public static async Task HandleAcquireGame(NetworkDataHelper networkDataHelper, User currentUser)
     {
         try
         {
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
 
 
             GameCollection.Instance.AcquireGame(message, currentUser);
-            Program.SendResponse(networkDataHelper, "1#Juego adquirido.");
+            await Program.SendResponse(networkDataHelper, "1#Juego adquirido.");
             Console.WriteLine($"Juego {message} adquirido por: {currentUser.Name}");
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
     }
     
-    public static Game HandleModifyGame(NetworkDataHelper networkDataHelper, ref User currentUser)
+    public static async Task<Game> HandleModifyGame(NetworkDataHelper networkDataHelper, User currentUser)
     {
         try
         {
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
             
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
             string[] parts = message.Split('#');
             
@@ -139,57 +139,57 @@ static class GameLogic
             
             Game modifiedGame = GameCollection.Instance.ModifyGame(game, currentUser, newTitle);
             
-            Program.SendResponse(networkDataHelper, "1#Juego modificado.");
+            await Program.SendResponse(networkDataHelper, "1#Juego modificado.");
             Console.WriteLine("Juego modificado.");
 
             return modifiedGame;
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
 
         return null;
     }
 
-    public static void HandleModifyCover(NetworkDataHelper networkDataHelper, ref Game currentGame, User currentUser, ref Socket socketClient)
+    public static async Task HandleModifyCover(NetworkDataHelper networkDataHelper, Game currentGame, User currentUser, TcpClient tcpClient)
     {
         try
         {
-            var fileCommonHandler = new FileCommsHandler(socketClient);
-            string imageName = fileCommonHandler.ReceiveFile();
+            var fileCommonHandler = new FileCommsHandler(tcpClient);
+            string imageName = await fileCommonHandler.ReceiveFile();
             GameCollection.Instance.ModifyCover(currentGame.Title, currentUser, imageName, fileCommonHandler);
-            Program.SendResponse(networkDataHelper, "1#Caratula modificada exitosamente");
+            await Program.SendResponse(networkDataHelper, "1#Caratula modificada exitosamente");
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
         
     }
     
-    public static void HandleDeleteGame(NetworkDataHelper networkDataHelper, ref User currentUser, ref Socket socketClient)
+    public static async Task HandleDeleteGame(NetworkDataHelper networkDataHelper, User currentUser, TcpClient tcpClient)
     {
         try
         {
 
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
             
-            GameCollection.Instance.DeleteGame(message, currentUser, new FileCommsHandler(socketClient) );
-            Program.SendResponse(networkDataHelper, "1#Juego eliminado.");
+            GameCollection.Instance.DeleteGame(message, currentUser, new FileCommsHandler(tcpClient));
+            await Program.SendResponse(networkDataHelper, "1#Juego eliminado.");
             Console.WriteLine($"Juego eliminado.");
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
     }
     
-    public static void HandleListAllGames(NetworkDataHelper networkDataHelper)
+    public static async Task HandleListAllGames(NetworkDataHelper networkDataHelper)
     {
         StringBuilder sb = new StringBuilder();
         List<Game> games = GameCollection.Instance.Games;
@@ -204,15 +204,15 @@ static class GameLogic
             sb.AppendLine("Actualmente no hay juegos publicados.");
         }
         
-        Program.SendResponse(networkDataHelper, sb.ToString());
+        await Program.SendResponse(networkDataHelper, sb.ToString());
     }
     
-    public static void HandleListGamesByGenre(NetworkDataHelper networkDataHelper)
+    public static async Task HandleListGamesByGenre(NetworkDataHelper networkDataHelper)
     {
-        byte[] lengthBytes = networkDataHelper.Receive(4);
+        byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
         int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-        byte[] data = networkDataHelper.Receive(dataLength);
+        byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
         string message = Encoding.UTF8.GetString(data);
 
         GameGenre genre = Utilities.AssignGenre(message);
@@ -242,15 +242,15 @@ static class GameLogic
             sb.AppendLine("Actualmente no hay juegos publicados.");
         }
 
-        Program.SendResponse(networkDataHelper, sb.ToString());
+        await Program.SendResponse(networkDataHelper, sb.ToString());
     }
     
-    public static void HandleListGamesByPlatform(NetworkDataHelper networkDataHelper)
+    public static async Task HandleListGamesByPlatform(NetworkDataHelper networkDataHelper)
     {
-        byte[] lengthBytes = networkDataHelper.Receive(4);
+        byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
         int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-        byte[] data = networkDataHelper.Receive(dataLength);
+        byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
         string message = Encoding.UTF8.GetString(data);
 
         GamePlatform platform = Utilities.AssignPlatform(message);
@@ -280,70 +280,70 @@ static class GameLogic
             sb.AppendLine("Actualmente no hay juegos publicados.");
         }
         
-        Program.SendResponse(networkDataHelper, sb.ToString());
+        await Program.SendResponse(networkDataHelper, sb.ToString());
     }
 
-    public static void HandleShowGame(NetworkDataHelper networkDataHelper)
+    public static async Task HandleShowGame(NetworkDataHelper networkDataHelper)
     {
         try
         {
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
 
             Game game = GameCollection.Instance.FindGame(message);
 
-            Program.SendResponse(networkDataHelper, game.ToString());
+            await Program.SendResponse(networkDataHelper, game.ToString());
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
     }
     
-    public static void HandleAskForCover(NetworkDataHelper networkDataHelper)
+    public static async Task HandleAskForCover(NetworkDataHelper networkDataHelper)
     {
         try
         {
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
             
             Game game = GameCollection.Instance.FindGame(message);
 
             bool hasCover = game.CoverImg != null;
 
-            Program.SendResponse(networkDataHelper, hasCover.ToString());
+            await Program.SendResponse(networkDataHelper, hasCover.ToString());
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
     }
     
-    public static void HandleDownloadCover(NetworkDataHelper networkDataHelper, ref Socket socketClient)
+    public static async Task HandleDownloadCover(NetworkDataHelper networkDataHelper, TcpClient tcpClient)
     {
         try
         {
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
 
             string path = GameCollection.Instance.GetCoverPath(message);
             
-            var fileCommonHandler = new FileCommsHandler(socketClient);
+            var fileCommonHandler = new FileCommsHandler(tcpClient);
             
-            fileCommonHandler.SendFile(path);
+            await fileCommonHandler.SendFile(path);
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
     }
 }

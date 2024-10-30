@@ -6,12 +6,12 @@ namespace Servidor.Logics.UserLogic;
 
 static class UserLogic
 {
-    public static void HandleRegister(NetworkDataHelper networkDataHelper)
+    public static async Task HandleRegister(NetworkDataHelper networkDataHelper)
     {
-        byte[] lengthBytes = networkDataHelper.Receive(4);
+        byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
         int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-        byte[] data = networkDataHelper.Receive(dataLength);
+        byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
         string message = Encoding.UTF8.GetString(data);
         string[] parts = message.Split('#');
 
@@ -20,7 +20,7 @@ static class UserLogic
 
         if (UserCollection.Instance.FindUser(username) != null)
         {
-            Program.SendResponse(networkDataHelper, "0#El nombre de usuario ya existe.");
+            await Program.SendResponse(networkDataHelper, "0#El nombre de usuario ya existe.");
         }
         else
         {
@@ -31,18 +31,18 @@ static class UserLogic
             };
                 
             UserCollection.Instance.AddUser(newUser);
-            Program.SendResponse(networkDataHelper, "1#Registro exitoso.");
+            await Program.SendResponse(networkDataHelper, "1#Registro exitoso.");
             Console.WriteLine($"Usuario registrado: {username}");
         }
         
     }
     
-    public static User HandleLogin(NetworkDataHelper networkDataHelper)
+    public static async Task<User> HandleLogin(NetworkDataHelper networkDataHelper)
     {
-        byte[] lengthBytes = networkDataHelper.Receive(4);
+        byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
         int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-        byte[] data = networkDataHelper.Receive(dataLength);
+        byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
         string message = Encoding.UTF8.GetString(data);
         string[] parts = message.Split('#');
 
@@ -53,14 +53,14 @@ static class UserLogic
 
         if (isAuthenticated)
         {
-            Program.SendResponse(networkDataHelper, "1#Inicio de sesion exitoso.");
+            await Program.SendResponse(networkDataHelper, "1#Inicio de sesion exitoso.");
             Console.WriteLine($"Usuario autenticado: {username}");
                 
             return UserCollection.Instance.FindUser(username);
         }
         else
         {
-            Program.SendResponse(networkDataHelper, "0#Credenciales incorrectas.");
+            await Program.SendResponse(networkDataHelper, "0#Credenciales incorrectas.");
             return null;
         }
         

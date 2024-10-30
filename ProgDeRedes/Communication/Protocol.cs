@@ -9,10 +9,10 @@ namespace Communication
         public const int FixedFileSize = 8;
         public const int MaxPacketSize = 32768; //32KB
 
-        public static long CalculateFileParts(long fileSize)
+        public static async Task<long> CalculateFileParts(long fileSize)
         {
             var fileParts = fileSize / MaxPacketSize;
-            return fileParts * MaxPacketSize == fileSize ? fileParts : fileParts + 1;
+            return await Task.Run(()=> fileParts * MaxPacketSize == fileSize ? fileParts : fileParts + 1);
         }
     }
 }

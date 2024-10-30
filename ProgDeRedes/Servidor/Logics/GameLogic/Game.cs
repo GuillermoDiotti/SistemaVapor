@@ -3,7 +3,7 @@ using Servidor.Logics.UserLogic;
 
 namespace Servidor.Logics.GameLogic;
 
-public record class Game
+public record Game
 {
     public string Title { get; set; }
     public GameGenre Genre { get; set; }

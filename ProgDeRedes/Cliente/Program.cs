@@ -11,51 +11,49 @@ namespace Cliente;
 
 class Program
 {
-    static readonly SettingsManager settingsManager = new SettingsManager();
+    static readonly SettingsManager SettingsManager = new SettingsManager();
     
-    private static bool exit = false;
-    private static bool logged = false;
-    
-    public static Socket socketClient;
-    
-    static void Main(string[] args)
-    {
-        socketClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+    public static bool _exit = false;
+    public static bool _logged = false;
 
-        string clientip = settingsManager.ReadSettings(ClientConfig.ClientIpConfigkey);
-        int clientport = int.Parse(settingsManager.ReadSettings(ClientConfig.ClientPortConfigKey));
-        string serverip = settingsManager.ReadSettings(ClientConfig.ServerIpConfigkey);
-        int serverport = int.Parse(settingsManager.ReadSettings(ClientConfig.ServerPortConfigKey));
+    public static TcpClient tcpClient;
+    
+    static async Task Main(string[] args)
+    {
+        string clientip = SettingsManager.ReadSettings(ClientConfig.ClientIpConfigkey);
+        int clientport = int.Parse(SettingsManager.ReadSettings(ClientConfig.ClientPortConfigKey));
+        string serverip = SettingsManager.ReadSettings(ClientConfig.ServerIpConfigkey);
+        int serverport = int.Parse(SettingsManager.ReadSettings(ClientConfig.ServerPortConfigKey));
 
 
         var localEndpoint = new IPEndPoint(IPAddress.Parse(clientip), clientport);
         var remoteEndpoint = new IPEndPoint(IPAddress.Parse(serverip), serverport);
 
-        bool connected = TryConnectToServer(localEndpoint, remoteEndpoint, serverip, serverport);
+        
+        var connected = await TryConnectToServer(localEndpoint, remoteEndpoint, serverip, serverport);
         
         if (connected)
         {
-            RunMainLoop();
+            await RunMainLoop();
         }
     }
     
-    public static bool TryConnectToServer(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint, string serverip, int serverport)
+    public static async Task<bool> TryConnectToServer(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint, string serverip, int serverport)
     {
         bool connected = false;
 
-        while (!connected && !exit)
+        while (!connected && !_exit)
         {
             try
             {
-                if (socketClient != null)
+                if (tcpClient != null)
                 {
-                    socketClient.Close();
-                    socketClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    tcpClient.Close();
                 }
-                
-                socketClient.Bind(localEndpoint);
+
+                tcpClient = new TcpClient(localEndpoint);
                 Console.WriteLine("Intentando conectar al servidor...");
-                socketClient.Connect(remoteEndpoint);
+                await tcpClient.ConnectAsync(remoteEndpoint);
                 connected = true;
                 Console.WriteLine($"Conectado al servidor en {serverip}:{serverport}");
             }
@@ -63,31 +61,35 @@ class Program
             {
                 Console.WriteLine($"No se pudo conectar al servidor: {ex.Message}");
                 Console.WriteLine("Reintentando en 2 segundos...");
-                System.Threading.Thread.Sleep(2000);
+                await Task.Delay(2000);
+                
             }
         }
 
         return connected;
     }
     
-    public static void RunMainLoop()
+    public static async Task RunMainLoop()
     {
         try
         {
-            NetworkDataHelper networkDataHelper = new NetworkDataHelper(socketClient);
+            NetworkDataHelper networkDataHelper = new NetworkDataHelper(tcpClient);
 
-            while (!exit)
+            while (!_exit)
             {
-                while (!logged && !exit)
+                while (!_logged && !_exit)
                 {
-                    logged = SessionManager.ShowSession(networkDataHelper, ref exit);
+                    _logged = await SessionManager.ShowSession(networkDataHelper);
                 }
 
-                while (logged && !exit)
+                while (_logged && !_exit)
                 {
-                    MenuManager.ShowMenu(networkDataHelper, ref logged, ref exit);
+                    await MenuManager.ShowMenu(networkDataHelper);
                 }
             }
+            
+            byte[] actionCode = BitConverter.GetBytes((int)Actions.CloseConnection);
+            await networkDataHelper.SendAsync(actionCode);
         }
         catch (SocketException ex)
         {
@@ -96,25 +98,25 @@ class Program
         finally
         {
             Console.WriteLine("Desconectado del servidor...");
-            socketClient.Shutdown(SocketShutdown.Both);
-            socketClient.Close();
+            
+            tcpClient.Close();
         }
     }
     
-    public static void SendData(NetworkDataHelper networkDataHelper, string message)
+    public static async Task SendData(NetworkDataHelper networkDataHelper, string message)
     {
         byte[] data = Encoding.UTF8.GetBytes(message);
         byte[] dataLength = BitConverter.GetBytes(data.Length);
 
-        networkDataHelper.Send(dataLength);
-        networkDataHelper.Send(data);
+        await networkDataHelper.SendAsync(dataLength);
+        await networkDataHelper.SendAsync(data);
     }
 
-    public static string ReceiveResponse(NetworkDataHelper networkDataHelper)
+    public static async Task<string> ReceiveResponse(NetworkDataHelper networkDataHelper)
     {
-        byte[] responseLengthBytes = networkDataHelper.Receive(4);
+        byte[] responseLengthBytes = await networkDataHelper.ReceiveAsync(4);
         int responseLength = BitConverter.ToInt32(responseLengthBytes, 0);
-        byte[] responseData = networkDataHelper.Receive(responseLength);
+        byte[] responseData = await networkDataHelper.ReceiveAsync(responseLength);
         return Encoding.UTF8.GetString(responseData);
     }
 

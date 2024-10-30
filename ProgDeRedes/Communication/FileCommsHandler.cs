@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Communication
 {
@@ -14,32 +13,32 @@ namespace Communication
         public readonly FileStreamHandler _fileStreamHandler;
         public readonly NetworkDataHelper _networkDataHelper;
 
-        public FileCommsHandler(Socket socket)
+        public FileCommsHandler(TcpClient tcpClient)
         {
             _conversionHandler = new ConversionHandler();
             _fileHandler = new FileHandler();
             _fileStreamHandler = new FileStreamHandler();
-            _networkDataHelper = new NetworkDataHelper(socket);
+            _networkDataHelper = new NetworkDataHelper(tcpClient);
         }
 
-        public void SendFile(string path)
+        public async Task SendFile(string path)
         {
-            if (_fileHandler.FileExists(path))
+            if (await _fileHandler.FileExists(path))
             {
-                var originalFileName = _fileHandler.GetFileName(path);
+                var originalFileName = await _fileHandler.GetFileName(path);
                 
                 var fileName = Guid.NewGuid().ToString() + "." + originalFileName.Split('.').Last();                // ---> Enviar el largo del nombre del archivo
-                _networkDataHelper.Send(_conversionHandler.ConvertIntToBytes(fileName.Length));
+                await _networkDataHelper.SendAsync(_conversionHandler.ConvertIntToBytes(fileName.Length));
                 // ---> Enviar el nombre del archivo
-                _networkDataHelper.Send(_conversionHandler.ConvertStringToBytes(fileName));
+                await _networkDataHelper.SendAsync(_conversionHandler.ConvertStringToBytes(fileName));
 
                 // ---> Obtener el tamaño del archivo
-                long fileSize = _fileHandler.GetFileSize(path);
+                long fileSize = await _fileHandler.GetFileSize(path);
                 // ---> Enviar el tamaño del archivo
                 var convertedFileSize = _conversionHandler.ConvertLongToBytes(fileSize);
-                _networkDataHelper.Send(convertedFileSize);
+                await _networkDataHelper.SendAsync(convertedFileSize);
                 // ---> Enviar el archivo (pero con file stream)
-                SendFileWithStream(fileSize, path);
+                await SendFileWithStream(fileSize, path);
             }
             else
             {
@@ -47,25 +46,25 @@ namespace Communication
             }
         }
 
-        public string ReceiveFile()
+        public async Task<string> ReceiveFile()
         {
             // ---> Recibir el largo del nombre del archivo
             int fileNameSize = _conversionHandler.ConvertBytesToInt(
-                _networkDataHelper.Receive(Protocol.FixedDataSize));
+                await _networkDataHelper.ReceiveAsync(Protocol.FixedDataSize));
             // ---> Recibir el nombre del archivo
-            string fileName = _conversionHandler.ConvertBytesToString(_networkDataHelper.Receive(fileNameSize));
+            string fileName = _conversionHandler.ConvertBytesToString(await _networkDataHelper.ReceiveAsync(fileNameSize));
             // ---> Recibir el largo del archivo
             long fileSize = _conversionHandler.ConvertBytesToLong(
-                _networkDataHelper.Receive(Protocol.FixedFileSize));
+                await _networkDataHelper.ReceiveAsync(Protocol.FixedFileSize));
             // ---> Recibir el archivo
-            ReceiveFileWithStreams(fileSize, fileName);
+            await ReceiveFileWithStreams(fileSize, fileName);
 
             return fileName;
         }
 
-        private void SendFileWithStream(long fileSize, string path)
+        private async Task SendFileWithStream(long fileSize, string path)
         {
-            long fileParts = Protocol.CalculateFileParts(fileSize);
+            long fileParts = await Protocol.CalculateFileParts(fileSize);
             long offset = 0;
             long currentPart = 1;  
          
@@ -79,25 +78,25 @@ namespace Communication
                     var lastPartSize = (int)(fileSize - offset);
                     //1- Leo de disco el último segmento
                     //2- Guardo el último segmento en un buffer
-                    data = _fileStreamHandler.Read(path, offset, lastPartSize); //Puntos 1 y 2
+                    data = await _fileStreamHandler.Read(path, offset, lastPartSize); //Puntos 1 y 2
                     offset += lastPartSize;
                 }
                 else
                 {
                     //1- Leo de disco el segmento
                     //2- Guardo ese segmento en un buffer
-                    data = _fileStreamHandler.Read(path, offset, Protocol.MaxPacketSize);
+                    data = await _fileStreamHandler.Read(path, offset, Protocol.MaxPacketSize);
                     offset += Protocol.MaxPacketSize;
                 }
 
-                _networkDataHelper.Send(data); //3- Envío ese segmento a travez de la red
+                await _networkDataHelper.SendAsync(data); //3- Envío ese segmento a travez de la red
                 currentPart++;
             }
         }
 
-        private void ReceiveFileWithStreams(long fileSize, string fileName)
+        private async Task ReceiveFileWithStreams(long fileSize, string fileName)
         {
-            long fileParts = Protocol.CalculateFileParts(fileSize);
+            long fileParts = await Protocol.CalculateFileParts(fileSize);
             long offset = 0;
             long currentPart = 1;
 
@@ -110,17 +109,17 @@ namespace Communication
                 {
                     //1.1 - Si es, recibo la ultima parte
                     var lastPartSize = (int)(fileSize - offset);
-                    data = _networkDataHelper.Receive(lastPartSize);
+                    data = await _networkDataHelper.ReceiveAsync(lastPartSize);
                     offset += lastPartSize;
                 }
                 else
                 {
                     //2.2- Si no, recibo una parte cualquiera
-                    data = _networkDataHelper.Receive(Protocol.MaxPacketSize);
+                    data = await _networkDataHelper.ReceiveAsync(Protocol.MaxPacketSize);
                     offset += Protocol.MaxPacketSize;
                 }
                 //3- Escribo esa parte del archivo a disco
-                _fileStreamHandler.Write(fileName, data);
+                await _fileStreamHandler.Write(fileName, data);
                 currentPart++;
             }
         }

@@ -2,20 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Communication
 {
     public class FileHandler
     {
-        public bool FileExists(string path)
+        public async Task<bool> FileExists(string path)
         {
-            return File.Exists(path);
+            return await Task.Run(()=> File.Exists(path));
         }
 
-        public string GetFileName(string path)
+        public async Task<string> GetFileName(string path)
         {
-            if (FileExists(path))
+            if (await FileExists(path))
             {
                 return new FileInfo(path).Name;
             }
@@ -23,9 +22,9 @@ namespace Communication
             throw new Exception("File does not exist");
         }
 
-        public long GetFileSize(string path)
+        public async Task<long> GetFileSize(string path)
         {
-            if (FileExists(path))
+            if (await FileExists(path))
             {
                 return new FileInfo(path).Length;
             }
@@ -33,9 +32,9 @@ namespace Communication
             throw new Exception("File does not exist");
         }
 
-        public void DeleteFile(string path)
+        public async Task DeleteFile(string path)
         {
-            if (FileExists(path))
+            if (await FileExists(path))
             {
                 File.Delete(path);
             }

@@ -4,45 +4,52 @@ namespace Communication;
 
 public class NetworkDataHelper
 {
-    private readonly Socket _socket;
+    private readonly TcpClient _tcpClient;
 
-    public NetworkDataHelper(Socket socket)
+    public NetworkDataHelper(TcpClient tcpClient)
     {
-        _socket = socket;
+        _tcpClient = tcpClient;
     }
 
-    public void Send(byte[] data)
+    public async Task SendAsync(byte[] data)
     {
-        int offset = 0;
-        while (offset < data.Length)
+        try
         {
-            var sent = _socket.Send(
+            int offset = 0;
+            var networkStream = _tcpClient.GetStream();
+            await networkStream.WriteAsync(
                 data,
                 offset,
-                data.Length - offset,
-                SocketFlags.None);
-            if (sent == 0)
-                throw new Exception("Connection lost");
-            offset += sent;
+                data.Length);
+        }
+        catch (Exception e)
+        {
+            throw new SocketException();
         }
     }
 
-    public byte[] Receive(int length)
+    public async Task<byte[]> ReceiveAsync(int length)
     {
         int offset = 0;
         var data = new byte[length];
-        while (offset < length)
+        var networkStream = _tcpClient.GetStream();
+        try
         {
-            var received = _socket.Receive(
-                data,
-                offset,
-                length - offset,
-                SocketFlags.None);
-            if (received == 0)
-                throw new Exception("Connection lost");
-            offset += received;
-        }
+            while (offset < length)
+            {
+                var received = await networkStream.ReadAsync(
+                    data,
+                    offset,
+                    length - offset);
+                
+                offset += received;
+            }
 
-        return data;
+            return data;
+        }
+        catch (Exception)
+        {
+            throw new SocketException();
+        }
     }
 }

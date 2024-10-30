@@ -9,15 +9,15 @@ namespace Servidor.Logics.ReviewLogic;
 
 static class ReviewLogic
 {
-    public static void HandleQualifyGame(NetworkDataHelper networkDataHelper, ref User currentUser)
+    public static async Task HandleQualifyGame(NetworkDataHelper networkDataHelper, User currentUser)
     {
         try
         {
 
-            byte[] lengthBytes = networkDataHelper.Receive(4);
+            byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
             int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-            byte[] data = networkDataHelper.Receive(dataLength);
+            byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
             string message = Encoding.UTF8.GetString(data);
             string[] parts = message.Split('#');
 
@@ -34,22 +34,22 @@ static class ReviewLogic
             };
             
             GameCollection.Instance.AddReview(title, currentUser, review);
-            Program.SendResponse(networkDataHelper, "1#Reseña enviada.");
+            await Program.SendResponse(networkDataHelper, "1#Reseña enviada.");
             Console.WriteLine($"Reseña de {title}" + " enviada.");
         }
         catch (ServerException e)
         {
-            Program.SendResponse(networkDataHelper, e.Message);
+            await Program.SendResponse(networkDataHelper, e.Message);
         }
 
     }
     
-    public static void HandleGetAllReviews(NetworkDataHelper networkDataHelper)
+    public static async Task HandleGetAllReviews(NetworkDataHelper networkDataHelper)
     {
-        byte[] lengthBytes = networkDataHelper.Receive(4);
+        byte[] lengthBytes = await networkDataHelper.ReceiveAsync(4);
         int dataLength = BitConverter.ToInt32(lengthBytes, 0);
 
-        byte[] data = networkDataHelper.Receive(dataLength);
+        byte[] data = await networkDataHelper.ReceiveAsync(dataLength);
         string message = Encoding.UTF8.GetString(data);
 
         List<Review> reviews = GameCollection.Instance.GetReviews(message);
@@ -69,6 +69,6 @@ static class ReviewLogic
             sb.AppendLine("No hay reseñas para este juego");
         }
 
-        Program.SendResponse(networkDataHelper, sb.ToString());
+        await Program.SendResponse(networkDataHelper, sb.ToString());
     }
 }

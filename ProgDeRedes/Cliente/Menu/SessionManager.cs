@@ -5,7 +5,7 @@ namespace Cliente.Menu;
 
 static class SessionManager
 {
-    public static bool ShowSession(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task<bool> ShowSession(NetworkDataHelper networkDataHelper)
     {
         Console.WriteLine("\n--- SISTEMA VAPOR ---");
         
@@ -19,19 +19,19 @@ static class SessionManager
         switch (choice)
         {
             case "1":
-                return Register(networkDataHelper, ref exit);
+                return await Register(networkDataHelper);
             case "2":
-                return Login(networkDataHelper, ref exit);
+                return await Login(networkDataHelper);
             case "3":
-                exit = true;
+                Program._exit = true;
                 return false;
             default:
                 Console.WriteLine("Opción no válida. Intente nuevamente.");
-                return ShowSession(networkDataHelper, ref exit);
+                return await ShowSession(networkDataHelper);
         }
     }
 
-    public static bool Register(NetworkDataHelper networkDataHelper, ref bool exit)
+    public static async Task<bool> Register(NetworkDataHelper networkDataHelper)
     {
         Console.Clear();
         Console.WriteLine("\n--- Registro ---");
@@ -46,11 +46,11 @@ static class SessionManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.Register);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, message);
+            await Program.SendData(networkDataHelper, message);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             Console.WriteLine($"Servidor:");
             Console.WriteLine();
             Program.ShowResponse(response);
@@ -58,12 +58,12 @@ static class SessionManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
         }
         return false;
     }
     
-    static bool Login(NetworkDataHelper networkDataHelper, ref bool exit)
+    static async Task<bool> Login(NetworkDataHelper networkDataHelper)
     {
         Console.Clear();
         Console.WriteLine("\n--- Iniciar Sesión ---");
@@ -79,11 +79,11 @@ static class SessionManager
         try
         {
             byte[] actionCode = BitConverter.GetBytes((int)Actions.Login);
-            networkDataHelper.Send(actionCode);
+            await networkDataHelper.SendAsync(actionCode);
 
-            Program.SendData(networkDataHelper, message);
+            await Program.SendData(networkDataHelper, message);
 
-            string response = Program.ReceiveResponse(networkDataHelper);
+            string response = await Program.ReceiveResponse(networkDataHelper);
             string code = response.Split('#')[0];
             Console.WriteLine($"Servidor: ");
             Console.WriteLine();
@@ -93,7 +93,7 @@ static class SessionManager
         catch (SocketException)
         {
             Console.WriteLine("La conexión ha sido interrumpida.");
-            exit = true;
+            Program._exit = true;
             return false;
         }
     }

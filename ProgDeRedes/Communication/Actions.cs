@@ -19,4 +19,5 @@ public enum Actions
     ModifyCover = 15,
     AskForCover = 16,
     DownloadCover = 17,
+    CloseConnection = 18,
 }

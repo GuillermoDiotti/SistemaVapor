@@ -236,4 +236,32 @@ public class GameCollection
             return Path.Combine(Directory.GetCurrentDirectory(), game.CoverImg);
         }
     }
+
+    public long[] GetFilesInfo(FileHandler fileHandler)
+    {
+        lock (_lock)
+        {
+            long[] infoFiles = new long[3] {0, 0, 0};
+
+            Parallel.ForEach(Games, game =>
+            {
+                if (game.CoverImg != null && game.Units > 0)
+                {
+                    string path = Path.Combine(Directory.GetCurrentDirectory(), game.CoverImg);
+                    var fileSize = fileHandler.GetFileSize(path);
+                    Interlocked.Add(ref infoFiles[0], fileSize.Result);
+                    Console.WriteLine(infoFiles[0]);
+
+                    Interlocked.Increment(ref infoFiles[2]);
+                    
+                }
+            });
+            
+            if(infoFiles[2] > 0){
+                infoFiles[1] = infoFiles[0] / infoFiles[2];
+            }   
+            
+            return infoFiles;
+        }
+    }
 }
